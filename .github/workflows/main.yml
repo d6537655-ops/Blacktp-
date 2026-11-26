@@ -1,3 +1,4 @@
+
 name: Build APK from ZIP
 
 on:
@@ -18,12 +19,12 @@ jobs:
           mkdir -p extracted
           unzip -q "BlackTP_final (5).zip" -d extracted
 
-      - name: Fix missing import in Wheel.kt
+      - name: Fix minDimension in Wheel.kt
         run: |
           WHEEL_FILE=$(find extracted -name "Wheel.kt" | head -n 1)
           if [ -n "$WHEEL_FILE" ]; then
-            sed -i '0,/^import /s//import androidx.compose.ui.geometry.minDimension\nimport /' "$WHEEL_FILE"
-            nl -ba "$WHEEL_FILE" | sed -n '1,45p'
+            sed -i -E 's/([a-zA-Z0-9_]+)\.minDimension/minOf(\1.width, \1.height)/g' "$WHEEL_FILE"
+            nl -ba "$WHEEL_FILE" | sed -n '35,45p'
           fi
 
       - name: Set up JDK 17

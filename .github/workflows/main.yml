@@ -18,6 +18,14 @@ jobs:
           mkdir -p extracted
           unzip -q "BlackTP_final (5).zip" -d extracted
 
+      - name: Fix missing import in Wheel.kt
+        run: |
+          WHEEL_FILE=$(find extracted -name "Wheel.kt" | head -n 1)
+          if [ -n "$WHEEL_FILE" ]; then
+            sed -i '0,/^import /s//import androidx.compose.ui.geometry.minDimension\nimport /' "$WHEEL_FILE"
+            nl -ba "$WHEEL_FILE" | sed -n '1,45p'
+          fi
+
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
@@ -27,25 +35,18 @@ jobs:
       - name: Find and Build APK
         run: |
           GRADLE_FILE=$(find extracted -name "build.gradle*" | head -n 1)
-          if [ -z "$GRADLE_FILE" ]; then
-            echo "ОШИБКА: Внутри архива не найден Android-проект (нет файлов build.gradle)"
-            exit 1
-          fi
           PROJECT_DIR=$(dirname "$GRADLE_FILE")
           if [ -f "$PROJECT_DIR/../gradlew" ]; then
             PROJECT_DIR="$PROJECT_DIR/.."
           fi
           cd "$PROJECT_DIR"
-          if [ -f "./gradlew" ]; then
-            chmod +x ./gradlew
-            ./gradlew assembleDebug
-          else
-            gradle assembleDebug
-          fi
+          chmod +x ./gradlew
+          ./gradlew assembleDebug
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: app-debug
           path: "**/build/outputs/apk/**/*.apk"
+          
           
